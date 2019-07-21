@@ -5,6 +5,8 @@ project.lock.json
 *.pyc
 nupkg/
 
+src/ReallySimpleCerts.Example/appsettings.json
+
 # Visual Studio Code
 .vscode
 
