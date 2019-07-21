@@ -12,7 +12,10 @@ Find the package on [nuget](https://www.nuget.org/packages/Marsman.ReallySimpleC
 
 ### Usage
 
-There are two distinct situations that ReallySimpleCerts aims to support. The first - and simplest - is to leverage Let's Encrypt certificates in an ASP.NET Core app running on Kestrel with no reverse proxy, as is typical when deploying to a container. The following configuration supports this scenario.
+There are two distinct situations that ReallySimpleCerts aims to support. The first - and simplest - use case is to leverage Let's Encrypt certificates in an ASP.NET Core app running on Kestrel with no reverse proxy, as is typical when running in a container or during development. The second use case is to automate the creation of hostname bindings & SSL SNI bindings for an Azure Website (App Service).
+
+#### No reverse proxy
+The following configuration supports the first use case, using Azure Key Vault to pesist the certificate and related information. When ReallySimpleCerts is used (in any configuration), _all_ requests which arrive in the Kestrel pipeline using https will use the created certificate. 
 ```
 using Certes;
 using Certes.Acme;
@@ -69,6 +72,29 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 	...
 }
 ```
+#### Azure App Service Binding
+Requests arriving at Kestrel when it is hosted behind a reverse proxy, such as the IIS in-process hosting used in an Azure Website, generally arrive using http. The standard configuration above is useless in this situation - we need to register the hostname & associated certificate with the host in order to use it. The `AzureRmThirdPartyDomainCertificateHandler` can be used to automate the creation & maintainance of these bindings from within the app itself. Insert the following after the `.WithAzureKeyVaultPersistence` call to add & configure the handler.
+```
+.WithAzureWebAppHandler(opts =>
+{
+	opts.ResourceGroupName = "[resource group]";
+	opts.WebAppName = "[webapp]";
+	opts.SubscriptionId = "[subscription id]";
+	opts.DnsRecordType = CustomHostNameDnsRecordType.A;
+})
+```
+By default the `AzureRmThirdPartyDomainCertificateHandler` uses the service principal specified in `ReallySimpleCertOptions`, but it can also be given its own specific principal by setting `opts.ServicePrincipalCredentials`. The principal used requires "website contributor" access to the **resource group** containing the target web app, in order to create the hostname & SSL SNI bindings.
 
+#### Certificate Storage
+Storage of the certificate and related information can be configured to use Azure Key Vault (recommended) or Azure Blob Storage. To use Azure Blob Storage, replace the call to `WithAzureKeyVaultPersistence` with the following:
+```
+.WithAzureBlobStorePersistence(opts =>
+{
+	opts.StorageConnectionString = "[connection string]";
+	opts.ContainerName = "[container name]";
+})
+```
+The core package also includes in-memory & file-based persistence implementations, which can be useful for testing/experimentation but should **never** be used in production environments or with any certificate that needs to remain secure.
 
-When ReallySimpleCerts is used _all_ requests which arrive in the Kestrel pipeline using https will use the created certificate. Storage of the certificate and related information can be configured to use Azure Key Vault (recommended)
+#### Supporting Other Hosts
+The `AzureRmThirdPartyDomainCertificateHandler` implements `IHostNameHandler` & `ICertificateHandler`, which are called when the certificate is created or updated, as well as when the certificate is initially loaded on app start. These implementations create & maintain the hostname binding & the SNI SSL binding, respectively. By implementing these interfaces & registering the implementation as a transient service, it is possible to support deploying the Lets Encrypt certificate to any host which allows bindings to be created via an API.
