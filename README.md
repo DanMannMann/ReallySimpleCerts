@@ -15,7 +15,7 @@ Find the package on [nuget](https://www.nuget.org/packages/Marsman.ReallySimpleC
 There are two distinct situations that ReallySimpleCerts aims to support. The first - and simplest - use case is to leverage Let's Encrypt certificates in an ASP.NET Core app running on Kestrel with no reverse proxy, as is typical when running in a container or during development. The second use case is to automate the creation of hostname bindings & SSL SNI bindings for an Azure Website (App Service).
 
 #### No reverse proxy
-The following configuration supports the first use case, using Azure Key Vault to pesist the certificate and related information. When ReallySimpleCerts is used (in any configuration), _all_ requests which arrive in the Kestrel pipeline using https will use the created certificate. 
+The following configuration supports the first use case, using Azure Key Vault to persist the certificate and related information. When ReallySimpleCerts is used (in any configuration), _all_ requests which arrive in the Kestrel pipeline using https will use the created certificate. 
 ```
 using Certes;
 using Certes.Acme;
