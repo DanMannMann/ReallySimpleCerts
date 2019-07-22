@@ -16,7 +16,7 @@ There are two distinct situations that ReallySimpleCerts aims to support. The fi
 
 #### No reverse proxy
 The following configuration supports the first use case, using Azure Key Vault to persist the certificate and related information. When ReallySimpleCerts is used (in any configuration), _all_ requests which arrive in the Kestrel pipeline using https will use the created certificate. 
-```
+```c#
 using Certes;
 using Certes.Acme;
 using Microsoft.Azure.Management.AppService.Fluent.Models;
@@ -74,7 +74,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 ```
 #### Azure App Service Binding
 Requests arriving at Kestrel when it is hosted behind a reverse proxy, such as the IIS in-process hosting used in an Azure Website, generally arrive using http. The standard configuration above is useless in this situation - we need to register the hostname & associated certificate with the host in order to use it. The `AzureRmThirdPartyDomainCertificateHandler` can be used to automate the creation & maintainance of these bindings from within the app itself. Insert the following after the `.WithAzureKeyVaultPersistence` call to add & configure the handler.
-```
+```c#
 .WithAzureWebAppHandler(opts =>
 {
 	opts.ResourceGroupName = "[resource group]";
@@ -87,7 +87,7 @@ By default the `AzureRmThirdPartyDomainCertificateHandler` uses the service prin
 
 #### Certificate Storage
 Storage of the certificate and related information can be configured to use Azure Key Vault (recommended) or Azure Blob Storage. To use Azure Blob Storage, replace the call to `WithAzureKeyVaultPersistence` with the following:
-```
+```c#
 .WithAzureBlobStorePersistence(opts =>
 {
 	opts.StorageConnectionString = "[connection string]";
