@@ -85,6 +85,10 @@ Requests arriving at Kestrel when it is hosted behind a reverse proxy, such as t
 ```
 By default the `AzureRmThirdPartyDomainCertificateHandler` uses the service principal specified in `ReallySimpleCertOptions`, but it can also be given its own specific principal by setting `opts.ServicePrincipalCredentials`. The principal used requires "website contributor" access to the **resource group** containing the target web app, in order to create the hostname & SSL SNI bindings.
 
+Note that configuring a hostname binding in Azure requires some security checks to be satisfied. For creating an A record, there must be a corresponding TXT record which is used to verify domain ownership. [Futher info](https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-custom-domain)
+
+Note also that nothing is done to automate the DNS configuration. You must manually create the required DNS records (A, TXT and/or CNAME) before running the `AzureRmThirdPartyDomainCertificateHandler` for the first time.
+
 #### Certificate Storage
 Storage of the certificate and related information can be configured to use Azure Key Vault (recommended) or Azure Blob Storage. To use Azure Blob Storage, replace the call to `WithAzureKeyVaultPersistence` with the following:
 ```c#
